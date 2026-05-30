@@ -1,0 +1,71 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Boutique Moda Fashions - Login</title>
+    <style>
+        :root { --gold: #d4af37; --bg: #0a0f1d; --card: rgba(22, 28, 46, 0.85); --input: rgba(27, 37, 59, 0.9); }
+        
+        body { 
+            /* Reducimos la capa oscura a 0.30 para que tu imagen de fondo se vea mucho más clara y viva */
+            background: linear-gradient(rgba(10, 15, 29, 0.30), rgba(10, 15, 29, 0.30)), url("{{ url_for('static', filename='img/fondo.png') }}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        
+        .login-card { 
+            background: var(--card); 
+            border: 2px solid var(--gold); 
+            border-radius: 15px; 
+            padding: 35px 30px; 
+            width: 380px; 
+            text-align: center; 
+            box-shadow: 0px 8px 32px rgba(0,0,0,0.7); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        h2 { color: var(--gold); font-family: 'Georgia', serif; margin-top: 0; font-size: 22px; letter-spacing: 1px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); }
+        h4 { margin: 5px 0 25px 0; font-weight: normal; opacity: 0.9; font-size: 14px; color: #fff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        label { color: var(--gold); font-size: 11px; font-weight: bold; text-transform: uppercase; text-align: left; display: block; margin-bottom: 6px; letter-spacing: 0.5px; }
+        select, input { background: var(--input); border: 1px solid rgba(212, 175, 55, 0.4); color: white; padding: 12px; border-radius: 7px; margin-bottom: 20px; width: 100%; box-sizing: border-box; font-size: 14px; text-align: center; }
+        select option { background: #161c2e; color: white; }
+        
+        .btn-login { background: var(--gold); color: black; border: none; padding: 13px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; width: 100%; font-size: 13px; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); }
+        .btn-login:hover { filter: brightness(1.15); }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h2>BOUTIQUE MODA FASHIONS</h2>
+    <h4>Lic. Alejandra Contreras</h4>
+    
+    <form action="/autenticar" method="POST">
+        <label>Seleccionar Módulo de Destino</label>
+        <select name="destino">
+            <option value="clientes">🛍️ REGISTRO: CLIENTE / VENTA</option>
+            <option value="inventario">📦 INVENTARIO ADMINISTRATIVO</option>
+        </select>
+
+        <label>Contraseña de Acceso</label>
+        <input type="password" name="clave" placeholder="••••••••••••" required autofocus>
+
+        <button type="submit" class="btn-login">INGRESAR AL SISTEMA 🔓</button>
+    </form>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Boutique Moda Fashions</title>
+    <style>
+        :root { --gold: #d4af37; --bg: #0a0f1d; --card: #161c2e; --input: #1b253b; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; overflow: hidden; height: 100vh; box-sizing: border-box; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); padding-bottom: 8px; margin-bottom: 12px; height: 55px; box-sizing: border-box; }
+        .header-left { color: var(--gold); font-weight: bold; font-size: 14px; line-height: 1.3; font-family: 'Georgia', serif; }
+        
+        .container { display: grid; grid-template-columns: 410px 1fr; gap: 15px; height: calc(100vh - 100px); overflow: hidden; box-sizing: border-box; }
+        
+        .panel-left { background: var(--card); border-radius: 15px; padding: 15px; border: 1px solid #2d3748; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: space-between; overflow: hidden; }
+        
+        .form-fixed-inputs { display: flex; flex-direction: column; }
+        
+        .prendas-scrollarea { overflow-y: auto; max-height: 120px; padding-right: 4px; margin-bottom: 4px; border: 1px solid #1f2937; padding: 6px; border-radius: 6px; background: rgba(0,0,0,0.2); }
+        
+        .panel-right { background: var(--card); border-radius: 15px; padding: 15px; border: 1px solid #2d3748; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; overflow: hidden; }
+        
+        input, select { background: var(--input); border: 1px solid #334155; color: white; padding: 9px; border-radius: 7px; margin-bottom: 8px; width: 100%; box-sizing: border-box; font-size: 13px; }
+        label { color: var(--gold); font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 3px; display: block; }
+        
+        .btn-add { background: none; border: none; color: var(--gold); padding: 2px 0; cursor: pointer; width: auto; font-weight: bold; margin-bottom: 6px; text-align: left; font-size: 12px; text-decoration: underline; display: inline-block; }
+        .btn-main { background: var(--gold); color: #000000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; width: 100%; font-size: 13px; letter-spacing: 0.5px; margin-top: auto; }
+        .btn-main:hover { filter: brightness(1.15); }
+        
+        .table-container { overflow-y: auto; flex: 1; margin-top: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { color: #8892b0; text-align: left; padding: 10px; font-size: 12px; border-bottom: 2px solid #2d3748; position: sticky; top: 0; background: var(--card); z-index: 10; }
+        td { padding: 10px; border-bottom: 1px solid #1f2937; font-size: 13px; vertical-align: middle; }
+        
+        .status { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; text-transform: uppercase; display: inline-block; }
+        .status-solvente { background: rgba(46,204,113,0.15); color: #2ecc71; }
+        .status-pendiente { background: rgba(241,196,15,0.15); color: #f1c40f; }
+        .status-deudor { background: rgba(231,76,60,0.15); color: #e74c3c; }
+        
+        .text-deuda { color: #ff4d4d; font-weight: bold; }
+        .text-abono { color: #2ecc71; font-weight: bold; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
+        .modal-content { background: var(--card); margin: 6% auto; padding: 22px; border: 1px solid var(--gold); width: 75%; border-radius: 12px; max-height: 75vh; overflow-y: auto; position: relative; }
+        .close { position: absolute; right: 20px; top: 15px; color: var(--gold); font-size: 28px; font-weight: bold; cursor: pointer; }
+        
+        .btn-accion { border: none; padding: 6px 9px; border-radius: 5px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
+
+        /* Estilos específicos para la tabla interna del buscador de prendas */
+        .tabla-modal-prendas th { background: #1b253b; color: var(--gold); }
+        .tabla-modal-prendas tr:hover { background: rgba(212, 175, 55, 0.1); cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        BOUTIQUE MODA FASHIONS<br>
+        <span style="color: white; font-size: 16px; font-family: 'Segoe UI', sans-serif;">REGISTRO: CLIENTE / VENTA</span>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button onclick="window.location.href='/inventario'" style="background:none; color:var(--gold); border:1px solid var(--gold); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:bold;">📦 INVENTARIO ADMINISTRATIVO</button>
+        <button onclick="window.location.href='/logout'" style="background:none; color:#e74c3c; border:1px solid #e74c3c; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:bold;">❌ CERRAR SESIÓN</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="panel-left">
+        <form action="/registrar" method="POST" id="mainForm" style="display:flex; flex-direction:column; height:100%; margin:0; justify-content: space-between;">
+            
+            <div class="form-fixed-inputs">
+                <label>Tipo de Operación</label>
+                <select name="tipo_operacion" id="tipo_op" onchange="toggleOperacion(this.value)">
+                    <option value="VENTA">🛍️ REGISTRAR NUEVA VENTA</option>
+                    <option value="ABONO">💰 REGISTRAR ABONO</option>
+                </select>
+
+                <label>Datos del Cliente</label>
+                <input type="text" name="nombre" placeholder="Nombre Completo del Cliente" required>
+                <input type="text" name="cedula" id="form_cedula" placeholder="Cédula de Identidad (Solo números)" pattern="[0-9]+" required>
+                <input type="text" name="telefono" id="form_telefono" placeholder="Número de Teléfono / WhatsApp">
+                <input type="text" name="direccion" placeholder="Dirección de Habitación">
+            </div>
+
+            <div id="section_venta" style="display:flex; flex-direction:column; overflow:hidden;">
+                <label>Detalle de Prendas</label>
+                <div class="prendas-scrollarea" id="prendas_container">
+                    <div style="display:flex; gap:6px; margin-bottom:5px; align-items: center;">
+                        <input type="text" name="prenda[]" onclick="abrirBuscadorPrendas(this)" placeholder="Click para seleccionar prenda..." readonly style="margin-bottom:0; padding:7px; cursor: pointer; background: rgba(27, 37, 59, 0.6);">
+                        <input type="number" name="cant[]" value="1" oninput="calcularGranTotalInmediato()" style="width:55px; text-align:center; margin-bottom:0; padding:7px;">
+                        <button type="button" onclick="this.parentElement.remove(); calcularGranTotalInmediato();" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 16px; padding: 0 5px;">✕</button>
+                    </div>
+                </div>
+                <div>
+                    <button type="button" class="btn-add" onclick="agregarPrenda()">+ Añadir otra pieza</button>
+                </div>
+                
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;">
+                        <label>Total Venta $</label>
+                        <input type="number" step="0.01" name="monto_total" id="monto_total" placeholder="0.00" style="margin-bottom:0;">
+                    </div>
+                    <div style="flex:1;">
+                        <label>Abono Inicial $</label>
+                        <input type="number" step="0.01" name="abono_inicial" id="abono_inicial" placeholder="0.00" style="margin-bottom:0;">
+                    </div>
+                </div>
+            </div>
+
+            <div id="section_abono" style="display:none;">
+                <label style="color:#2ecc71;">Monto del Abono Realizado $</label>
+                <input type="number" step="0.01" name="abono" id="input_abono" placeholder="0.00">
+            </div>
+
+            <button type="submit" class="btn-main" id="btn_submit_principal">PROCESAR REGISTRO 💾</button>
+        </form>
+    </div>
+
+    <div class="panel-right">
+        <input type="text" id="buscador" onkeyup="buscarCliente()" placeholder="🔍 Buscar por nombre o número de cédula..." style="border-radius:30px; text-align:center;">
+        
+        <div class="table-container">
+            <table id="tabla_clientes">
+                <thead>
+                    <tr>
+                        <th>CLIENTE</th>
+                        <th>CONTACTO</th>
+                        <th>ESTADO</th>
+                        <th>SALDO</th>
+                        <th style="text-align: center; width:150px;">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in clientes %}
+                    <tr>
+                        <td><b>{{c.nombre}}</b><br><small style="color: #8892b0;">CI: {{c.cedula}}</small></td>
+                        <td>
+                            {% if c.telefono %}
+                            <a href="https://wa.me/{{c.telefono}}" target="_blank" style="text-decoration:none; color:#2ecc71; font-weight:bold; display: inline-flex; align-items:center; gap:5px;">
+                                {{c.telefono}} <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" width="14" height="14">
+                            </a>
+                            {% else %}
+                            <span style="opacity:0.3;">Sin número</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.deuda_total == 0.0 %}
+                                <span class="status status-solvente">SOLVENTE</span>
+                            {% elif c.deuda_total >= 20.00 %}
+                                <span class="status status-deudor">DEUDOR</span>
+                            {% else %}
+                                <span class="status status-pendiente">PENDIENTE</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-weight:bold; color:{% if c.deuda_total >= 20.00 %}#ff4d4d{% elif c.deuda_total > 0 %}#f1c40f{% else %}#2ecc71{% endif %};">
+                            ${{"%.2f"|format(c.deuda_total)}}
+                        </td>
+                        <td style="text-align: center;">
+                            <div style="display:flex; gap:5px; justify-content:center;">
+                                <button class="btn-accion" onclick="cargarCliente('{{c.nombre}}','{{c.cedula}}','{{c.telefono}}','{{c.direccion}}','{{c.deuda_total}}', 'LLAVE')" title="Cargar para Venta/Abono" style="background:#3498db; color:white;">🔑</button>
+                                <button class="btn-accion" onclick="cargarCliente('{{c.nombre}}','{{c.cedula}}','{{c.telefono}}','{{c.direccion}}','{{c.deuda_total}}', 'EDITAR')" title="Editar Información" style="background:#9b59b6; color:white;">✏️</button>
+                                <button class="btn-accion" onclick="verHistorial('{{c.id}}','{{c.nombre}}')" title="Ver Historial" style="background:var(--gold); color:black;">📄</button>
+                                <button class="btn-accion" onclick="if(confirm('¿Eliminar permanentemente a este cliente?')) window.location.href='/eliminar/{{c.id}}'" title="Eliminar" style="background:#e74c3c; color:white;">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="modal_historial" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="cerrarModal()">&times;</span>
+        <h3 id="modal_titulo" style="color:var(--gold); margin-top:0; border-bottom:1px solid #2d3748; padding-bottom:8px; font-size:16px;"></h3>
+        <div id="modal_tabla_container"></div>
+    </div>
+</div>
+
+<div id="modal_buscador_prendas" class="modal">
+    <div class="modal-content" style="width: 60%; max-height: 80vh;">
+        <span class="close" onclick="cerrarModalPrendas()">&times;</span>
+        <h3 style="color:var(--gold); margin-top:0; border-bottom:1px solid #2d3748; padding-bottom:8px; font-size:16px;">🔍 SELECCIÓN DE PRENDA E INVENTARIO</h3>
+        
+        <input type="text" id="input_filtrar_prenda_modal" oninput="filtrarPrendasEnModal()" placeholder="Escribe el modelo o descripción para filtrar en tiempo real..." style="margin-top: 10px; padding: 12px; border: 1px solid var(--gold); border-radius: 8px; font-size: 14px;">
+        
+        <div style="overflow-y: auto; max-height: 45vh; margin-top: 15px; border: 1px solid #2d3748; border-radius: 8px;">
+            <table class="tabla-modal-prendas" id="tabla_prendas_modal" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="padding: 12px; font-size: 13px;">MODELO / PRENDA</th>
+                        <th style="padding: 12px; font-size: 13px; text-align: center;">PRECIO UNITARIO</th>
+                        <th style="padding: 12px; font-size: 13px; text-align: center;">STOCK REAL</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpo_prendas_modal">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let deudaClienteSeleccionado = 0;
+    let clienteNombreSeleccionado = "";
+    let clienteTelefonoSeleccionado = "";
+    
+    // Almacenamiento de los productos de la API
+    let inventarioProductos = [];
+    let inputPrendaActivo = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        cargarInventarioDesdeAPI();
+    });
+
+    function cargarInventarioDesdeAPI() {
+        fetch('/api/productos_venta')
+            .then(res => res.json())
+            .then(data => {
+                inventarioProductos = data;
+            })
+            .catch(err => console.error("Error al cargar la API de inventario:", err));
+    }
+
+    // CONTROL DEL NUEVO MODAL DE PRENDAS
+    function abrirBuscadorPrendas(inputElement) {
+        inputPrendaActivo = inputElement;
+        document.getElementById('input_filtrar_prenda_modal').value = "";
+        renderizarTablaPrendasModal(inventarioProductos);
+        document.getElementById('modal_buscador_prendas').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('input_filtrar_prenda_modal').focus();
+        }, 100);
+    }
+
+    function cerrarModalPrendas() {
+        document.getElementById('modal_buscador_prendas').style.display = 'none';
+        inputPrendaActivo = null;
+    }
+
+    function renderizarTablaPrendasModal(lista) {
+        const tbody = document.getElementById('cuerpo_prendas_modal');
+        tbody.innerHTML = "";
+
+        if (lista.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; opacity:0.5;">No se encontraron prendas con esa descripción.</td></tr>`;
+            return;
+        }
+
+        lista.forEach(p => {
+            const tr = document.createElement('tr');
+            
+            // Si no hay stock, cambiamos sutilmente el color del texto para avisar al vendedor
+            let estiloStock = p.stock <= 0 ? 'color: #ff4d4d; font-weight: bold;' : 'color: #2ecc71; font-weight: bold;';
+            
+            tr.innerHTML = `
+                <td style="padding: 12px; font-weight: bold;">${p.prenda}</td>
+                <td style="padding: 12px; text-align: center; color: var(--gold); font-weight: bold;">$${p.precio.toFixed(2)}</td>
+                <td style="padding: 12px; text-align: center; ${estiloStock}">${p.stock} und.</td>
+            `;
+
+            // Al hacer click en la fila, se seleccionan los datos de forma exacta
+            tr.onclick = function() {
+                if (inputPrendaActivo) {
+                    // Mantiene el formato exacto que espera recibir tu backend de Flask
+                    inputPrendaActivo.value = `${p.prenda} ($${p.precio.toFixed(2)})`;
+                    calcularGranTotalInmediato();
+                }
+                cerrarModalPrendas();
+            };
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    // FILTRADO REACTIVO EN TIEMPO REAL
+    function filtrarPrendasEnModal() {
+        let textoBuscado = document.getElementById('input_filtrar_prenda_modal').value.toLowerCase().trim();
+        let filtrados = inventarioProductos.filter(p => 
+            p.prenda.toLowerCase().includes(textoBuscado) || p.stock.toString().includes(textoBuscado)
+        );
+        renderizarTablaPrendasModal(filtrados);
+    }
+
+    function calcularGranTotalInmediato() {
+        const inputsPrendas = document.getElementsByName('prenda[]');
+        const inputsCantidades = document.getElementsByName('cant[]');
+        let sumaSugerida = 0;
+
+        for (let i = 0; i < inputsPrendas.length; i++) {
+            let valorInput = inputsPrendas[i].value;
+            let cantidad = parseInt(inputsCantidades[i].value) || 1;
+            
+            inventarioProductos.forEach(prod => {
+                let stringFormatoEsperado = `${prod.prenda} ($${prod.precio.toFixed(2)})`;
+                if (stringFormatoEsperado === valorInput || prod.prenda === valorInput) {
+                    sumaSugerida += (prod.precio * cantidad);
+                }
+            });
+        }
+        
+        // Si no quedan prendas, reiniciamos el monto sugerido a 0 de forma limpia
+        document.getElementById('monto_total').value = sumaSugerida > 0 ? sumaSugerida.toFixed(2) : "";
+    }
+
+    function agregarPrenda() {
+        const div = document.createElement('div');
+        div.style.display = 'flex'; div.style.gap = '6px'; div.style.marginBottom = '5px'; div.style.alignItems = 'center';
+        div.innerHTML = '<input type="text" name="prenda[]" onclick="abrirBuscadorPrendas(this)" placeholder="Click para seleccionar prenda..." readonly style="margin-bottom:0; padding:7px; cursor: pointer; background: rgba(27, 37, 59, 0.6);"><input type="number" name="cant[]" value="1" oninput="calcularGranTotalInmediato()" style="width:55px; text-align:center; margin-bottom:0; padding:7px;"><button type="button" onclick="this.parentElement.remove(); calcularGranTotalInmediato();" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 16px; padding: 0 5px;">✕</button>';
+        document.getElementById('prendas_container').appendChild(div);
+        
+        let c = document.getElementById('prendas_container');
+        c.scrollTop = c.scrollHeight;
+    }
+
+    function toggleOperacion(val) {
+        document.getElementById('section_venta').style.display = val === 'VENTA' ? 'flex' : 'none';
+        document.getElementById('section_abono').style.display = val === 'ABONO' ? 'block' : 'none';
+    }
+
+    function cargarCliente(n, ci, t, d, deuda, modo) {
+        let parsedDeuda = parseFloat(deuda);
+        let tipoOpActual = document.getElementById('tipo_op').value;
+
+        if (modo === 'LLAVE' && tipoOpActual === 'VENTA' && parsedDeuda >= 20.00) {
+            let clave = prompt("Módulo de Seguridad:\nEl cliente posee estado DEUDOR (Deuda >= $20.00). Ingrese la clave de autorización para procesar otra venta:");
+            if (clave !== "Ari0207#") {
+                alert("Clave incorrecta. Operación denegada.");
+                return;
+            }
+        }
+        
+        document.getElementsByName('nombre')[0].value = n;
+        document.getElementById('form_cedula').value = ci;
+        document.getElementById('form_telefono').value = t;
+        document.getElementsByName('direccion')[0].value = d;
+        
+        deudaClienteSeleccionado = parsedDeuda;
+        clienteNombreSeleccionado = n;
+        clienteTelefonoSeleccionado = t;
+
+        if (modo === 'EDITAR') {
+            document.getElementById('mainForm').action = "/editar_cliente";
+            document.getElementById('btn_submit_principal').innerText = "GUARDAR CAMBIOS EN INFORMACIÓN ✏️";
+            document.getElementById('btn_submit_principal').style.background = "#9b59b6";
+            document.getElementById('btn_submit_principal').style.color = "#ffffff";
+            document.getElementById('section_venta').style.display = 'none';
+            document.getElementById('section_abono').style.display = 'none';
+            alert("Información de " + n + " lista para editar (No requiere clave).");
+        } else {
+            document.getElementById('mainForm').action = "/registrar";
+            document.getElementById('btn_submit_principal').innerText = "PROCESAR REGISTRO 💾";
+            document.getElementById('btn_submit_principal').style.background = "var(--gold)";
+            document.getElementById('btn_submit_principal').style.color = "#000000";
+            toggleOperacion(document.getElementById('tipo_op').value);
+            alert("Cliente cargado correctamente para transacciones.");
+        }
+    }
+
+    function buscarCliente() {
+        let filtro = document.getElementById('buscador').value.toLowerCase();
+        let filas = document.querySelectorAll('#tabla_clientes tbody tr');
+        filas.forEach(f => { f.style.display = f.innerText.toLowerCase().includes(filtro) ? '' : 'none'; });
+    }
+
+    document.getElementById('mainForm').onsubmit = function(e) {
+        if(document.getElementById('mainForm').action.includes('editar_cliente')) return true;
+        
+        const op = document.getElementById('tipo_op').value;
+        let msg = "";
+
+        if (op === 'VENTA') {
+            const totalVenta = parseFloat(document.getElementById('monto_total').value) || 0;
+            const abonoInicial = parseFloat(document.getElementById('abono_inicial').value) || 0;
+            let saldoRestante = totalVenta - abonoInicial;
+
+            if (saldoRestante === 0) {
+                msg = "Gracias por su compra en boutique moda fashions de Lic Alejandra Contreras";
+            } else {
+                let deudaFutura = deudaClienteSeleccionado + saldoRestante;
+                if (deudaFutura >= 20.00) {
+                    msg = "Boutique moda fashion de Lic Alejandra le recuerda que debe hacer un abono a su deuda.";
+                } else {
+                    msg = "Gracias por su compra en boutique moda fashions de Lic Alejandra Contreras";
+                }
+            }
+        } else if (op === 'ABONO') {
+            const montoAbono = parseFloat(document.getElementById('input_abono').value) || 0;
+            if (montoAbono > deudaClienteSeleccionado) {
+                alert("Operación cancelada: El abono no puede ser mayor que la deuda actual ($" + deudaClienteSeleccionado.toFixed(2) + ")");
+                e.preventDefault();
+                return false;
+            }
+            msg = "Boutique moda fashions le da las gracias por su abono";
+        }
+
+        if (clienteTelefonoSeleccionado && msg !== "") {
+            let urlWhatsapp = "https://wa.me/" + clienteTelefonoSeleccionado + "?text=" + encodeURIComponent(msg);
+            setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 500);
+        }
+        return true;
+    };
+
+    function verHistorial(id, nombre) {
+        document.getElementById('modal_titulo').innerText = "Estado de Cuenta - Cliente: " + nombre;
+        fetch('/historial/' + id)
+            .then(res => res.json())
+            .then(data => {
+                if(!data || data.length === 0) {
+                    document.getElementById('modal_tabla_container').innerHTML = '<p style="text-align:center; opacity:0.5; padding:15px;">No se registran movimientos para este cliente.</p>';
+                } else {
+                    let html = '<table width="100%"><thead><tr><th>FECHA</th><th>TIPO</th><th>DETALLE / PRENDAS</th><th>TOTAL VENTA</th><th>ABONO / INICIAL</th><th>SALDO RESTANTE</th></tr></thead><tbody>';
+                    data.forEach(m => {
+                        let esVenta = m.tipo === 'VENTA';
+                        let badgeColor = esVenta ? 'text-deuda' : 'text-abono';
+                        let montoAbonado = esVenta ? m.abono_inicial : m.monto_movimiento;
+                        
+                        html += `<tr>
+                            <td>${m.fecha}</td>
+                            <td><span class="${badgeColor}">${m.tipo}</span></td>
+                            <td>${m.detalles}</td>
+                            <td style="color:#ff4d4d;">${esVenta ? '$' + m.monto_total.toFixed(2) : '-'}</td>
+                            <td style="color:#2ecc71;">$${montoAbonado.toFixed(2)}</td>
+                            <td class="text-deuda" style="font-weight:bold;">$${m.resta.toFixed(2)}</td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table>';
+                    document.getElementById('modal_tabla_container').innerHTML = html;
+                }
+                document.getElementById('modal_historial').style.display = 'block';
+            })
+            .catch(err => {
+                alert("Error al cargar movimientos.");
+                console.error(err);
+            });
+    }
+
+    function cerrarModal() { document.getElementById('modal_historial').style.display = 'none'; }
+    
+    // Cierre general de ventanas haciendo click fuera de ellas
+    window.onclick = function(e) { 
+        if (e.target == document.getElementById('modal_historial')) cerrarModal(); 
+        if (e.target == document.getElementById('modal_buscador_prendas')) cerrarModalPrendas();
+    }
+</script>
+</body>
+</html>
