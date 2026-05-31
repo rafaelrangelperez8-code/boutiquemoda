@@ -76,7 +76,7 @@
                 </select>
 
                 <label>Datos del Cliente</label>
-                <input type="text" name="nombre" placeholder="Nombre Completo del Cliente" required>
+                <input type="text" name="nombre" id="form_nombre" placeholder="Nombre Completo del Cliente" required>
                 <input type="text" name="cedula" id="form_cedula" placeholder="Cédula de Identidad (Solo números)" pattern="[0-9]+" required>
                 <input type="text" name="telefono" id="form_telefono" placeholder="Número de Teléfono / WhatsApp">
                 <input type="text" name="direccion" placeholder="Dirección de Habitación">
@@ -136,7 +136,7 @@
                         <td><b>{{c.nombre}}</b><br><small style="color: #8892b0;">CI: {{c.cedula}}</small></td>
                         <td>
                             {% if c.telefono %}
-                            <a href="https://wa.me/{{c.telefono}}" target="_blank" style="text-decoration:none; color:#2ecc71; font-weight:bold; display: inline-flex; align-items:center; gap:5px;">
+                            <a href="{{ c.whatsapp_link }}" target="_blank" style="text-decoration:none; color:#2ecc71; font-weight:bold; display: inline-flex; align-items:center; gap:5px;">
                                 {{c.telefono}} <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" width="14" height="14">
                             </a>
                             {% else %}
@@ -332,7 +332,7 @@
             }
         }
         
-        document.getElementsByName('nombre')[0].value = n;
+        document.getElementById('form_nombre').value = n;
         document.getElementById('form_cedula').value = ci;
         document.getElementById('form_telefono').value = t;
         document.getElementsByName('direccion')[0].value = d;
@@ -371,6 +371,9 @@
         const op = document.getElementById('tipo_op').value;
         let msg = "";
 
+        // Aseguramos capturar el teléfono e información directamente del input actual por si se editó o ingresó manual
+        let telefonoActual = document.getElementById('form_telefono').value.trim();
+
         if (op === 'VENTA') {
             const totalVenta = parseFloat(document.getElementById('monto_total').value) || 0;
             const abonoInicial = parseFloat(document.getElementById('abono_inicial').value) || 0;
@@ -396,8 +399,8 @@
             msg = "Boutique moda fashions le da las gracias por su abono";
         }
 
-        if (clienteTelefonoSeleccionado && msg !== "") {
-            let urlWhatsapp = "https://wa.me/" + clienteTelefonoSeleccionado + "?text=" + encodeURIComponent(msg);
+        if (telefonoActual && msg !== "") {
+            let urlWhatsapp = "https://wa.me/" + telefonoActual + "?text=" + encodeURIComponent(msg);
             setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 500);
         }
         return true;
