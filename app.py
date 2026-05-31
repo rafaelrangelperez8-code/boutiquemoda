@@ -21,12 +21,20 @@ db = SQLAlchemy(app)
 
 class Cliente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(150), nullable=False)
+    name_alias_original = db.Column('nombre', db.String(150), nullable=False) # Mapeo nativo
     cedula = db.Column(db.String(50), nullable=False, unique=True)
     telefono = db.Column(db.String(50))
     direccion = db.Column(db.String(300))
     deuda_total = db.Column(db.Float, default=0.0)
     movimientos = db.relationship('Movimiento', backref='cliente', lazy=True, cascade="all, delete-orphan")
+
+    # Mantenemos la propiedad .nombre para compatibilidad con el resto de tus rutas
+    @property
+    def nombre(self):
+        return self.name_alias_original
+    @nombre.setter
+    def nombre(self, valor):
+        self.name_alias_original = valor
 
 class Movimiento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -71,7 +79,6 @@ with app.app_context():
 # CONTROLADORES: LOGIN Y CLIENTES
 # ==========================================
 
-# MODIFICADO: Ahora la raíz comprueba sesión; si no hay, arranca en Login.html
 @app.route('/')
 def login():
     if session.get('autenticado'):
@@ -101,13 +108,27 @@ def dashboard():
     if not session.get('autenticado'):
         return redirect(url_for('login'))
         
-    clientes = Cliente.query.order_by(Cliente.nombre).all()
+    clientes = Cliente.query.order_by(Cliente.name_alias_original).all()
     
-    # MODIFICADO: Generar dinámicamente los mensajes y enlaces de WhatsApp según el estado de la deuda
+    # MODIFICADO: Generar dinámicamente los mensajes y enlaces de WhatsApp LIMPIANDO EL TELÉFONO
     for c in clientes:
         deuda = float(c.deuda_total or 0.0)
         nombre_cliente = c.nombre
-        telefono = str(c.telefono or '').strip()
+        telefono_crudo = str(c.telefono or '').strip()
+        
+        # --- FILTRO DE LIMPIEZA INTELIGENTE PARA EL TELÉFONO ---
+        # 1. Deja únicamente los dígitos (elimina guiones, espacios, letras)
+        tel_limpio = "".join(filter(str.isdigit, telefono_crudo))
+        
+        # 2. Si empieza por '0' (ej. 0424...), se le remueve el cero inicial
+        if tel_limpio.startswith("0"):
+            tel_limpio = tel_limpio[1:]
+            
+        # 3. Si no tiene el código de área internacional de Venezuela (58), se le coloca adelante
+        if tel_limpio and not tel_limpio.startswith("58"):
+            tel_final = "58" + tel_limpio
+        else:
+            tel_final = tel_limpio
         
         # 🟢 CASO 1: Cliente SOLVENTE
         if deuda == 0.0:
@@ -121,9 +142,13 @@ def dashboard():
         else:
             texto_msg = f"Estimado(a) {nombre_cliente}, la Boutique Moda Fashions de la Lic. Alejandra Contreras le recuerda que presenta un saldo pendiente de ${deuda:.2f}. Le invitamos a realizar un abono a su cuenta. ¡Feliz día!"
         
-        # Inyectamos de manera temporal el link codificado en cada objeto cliente para usarlo en la tabla HTML
+        # Inyectamos el link codificado con el teléfono formateado sin ceros molestos
         texto_codificado = urllib.parse.quote(texto_msg)
-        c.whatsapp_link = f"https://wa.me/{telefono}?text={texto_codificado}"
+        
+        if tel_final:
+            c.whatsapp_link = f"https://api.whatsapp.com/send?phone={tel_final}&text={texto_codificado}"
+        else:
+            c.whatsapp_link = "#"
         
     return render_template('dashboard.html', clientes=clientes)
 
@@ -141,7 +166,6 @@ def registrar():
 
     cliente = Cliente.query.filter_by(cedula=cedula).first()
     
-    # CONTROL DE SEGURIDAD EXCLUSIVO PARA LA PANTALLA DOS
     if cliente:
         if cliente.nombre.upper().strip() != nombre:
             return f"<script>alert('ERROR: La cédula {cedula} ya se encuentra registrada a nombre de {cliente.nombre}. Verifique los datos.'); window.location='/dashboard';</script>"
