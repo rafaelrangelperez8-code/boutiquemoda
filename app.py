@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
+import urllib.parse  # MODIFICADO: Agregado para codificar los mensajes de WhatsApp
 
 app = Flask(__name__)
 app.secret_key = 'Ari0207#'  # Clave de cifrado para las sesiones de usuario
@@ -99,7 +100,31 @@ def logout():
 def dashboard():
     if not session.get('autenticado'):
         return redirect(url_for('login'))
+        
     clientes = Cliente.query.order_by(Cliente.nombre).all()
+    
+    # MODIFICADO: Generar dinámicamente los mensajes y enlaces de WhatsApp según el estado de la deuda
+    for c in clientes:
+        deuda = float(c.deuda_total or 0.0)
+        nombre_cliente = c.nombre
+        telefono = str(c.telefono or '').strip()
+        
+        # 🟢 CASO 1: Cliente SOLVENTE
+        if deuda == 0.0:
+            texto_msg = f"Estimado(a) {nombre_cliente}, la Boutique Moda Fashions de la Lic. Alejandra Contreras le informa que su estado de cuenta se encuentra SOLVENTE. ¡Gracias por su preferencia!"
+        
+        # 🔴 CASO 2: Cliente DEUDOR (Deuda mayor o igual a $20.00)
+        elif deuda >= 20.00:
+            texto_msg = f"Boutique Moda Fashions de la Lic. Alejandra Contreras le recuerda que presenta un estado DEUDOR con un saldo pendiente de ${deuda:.2f}. Le agradecemos realizar un abono a la brevedad para regularizar su cuenta. ¡Muchas gracias!"
+        
+        # 🟡 CASO 3: Cliente PENDIENTE (Deuda menor a $20.00)
+        else:
+            texto_msg = f"Estimado(a) {nombre_cliente}, la Boutique Moda Fashions de la Lic. Alejandra Contreras le recuerda que presenta un saldo pendiente de ${deuda:.2f}. Le invitamos a realizar un abono a su cuenta. ¡Feliz día!"
+        
+        # Inyectamos de manera temporal el link codificado en cada objeto cliente para usarlo en la tabla HTML
+        texto_codificado = urllib.parse.quote(texto_msg)
+        c.whatsapp_link = f"https://wa.me/{telefono}?text={texto_codificado}"
+        
     return render_template('dashboard.html', clientes=clientes)
 
 @app.route('/registrar', methods=['POST'])
